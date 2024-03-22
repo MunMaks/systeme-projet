@@ -1,6 +1,6 @@
 """
 22 mars 2024, Copyright MUNAIT Maks
-Universite Gustave Eiffel
+Université Gustave Eiffel
 """
 
 import os
@@ -10,13 +10,13 @@ import subprocess
 
 def extraire_nom_etudiant(nom_fichier):
     """
-    Extrait le prenom et le nom de l'etudiant a partir du nom du fichier.
+    Extrait le prénom et le nom de l'étudiant à partir du nom du fichier.
 
     Args:
-        nom_fichier (str): Le nom du fichier contenant le prenom et le nom de l'etudiant.
+        nom_fichier (str): Le nom du fichier contenant le prénom et le nom de l'étudiant.
 
     Returns:
-        tuple: Un tuple contenant le prenom et le nom de l'etudiant.
+        tuple: Un tuple contenant le prénom et le nom de l'étudiant.
     """
     nom_fichier_sans_extension = os.path.splitext(nom_fichier)[0]
     prenom, nom = nom_fichier_sans_extension.split('_')
@@ -29,36 +29,34 @@ def compiler_fichier_c(chemin_fichier):
     Compile un fichier C avec gcc en utilisant subprocess.
 
     Args:
-        chemin_fichier (str): Le chemin absolu vers le fichier C a compiler.
+        chemin_fichier (str): Le chemin absolu vers le fichier C à compiler.
 
     Returns:
-        bool: True si la compilation reussie, False sinon.
+        bool: True si la compilation réussie, False sinon.
     """
     nom_fichier_sans_extension = os.path.splitext(chemin_fichier)[0]
     fichier_compilable = nom_fichier_sans_extension + ".out"
 
     # Compiler le fichier avec gcc
-    resultat_compilation = subprocess.run(\
-        ["gcc", chemin_fichier, "-o", fichier_compilable, "-Wall", "-ansi"],\
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-
-    # Verifier si la compilation a reussi
+    resultat_compilation = subprocess.run(["gcc", chemin_fichier, "-o", fichier_compilable, "-Wall", "-ansi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    # Vérifier si la compilation a réussi
     if resultat_compilation.returncode == 0 and os.path.exists(fichier_compilable):
         return True, fichier_compilable, len(resultat_compilation.stderr.decode().split('\n')) - 1
-
-    return False, None, len(resultat_compilation.stderr.decode().split('\n')) - 1
+    else:
+        return False, None, len(resultat_compilation.stderr.decode().split('\n')) - 1
 
 
 
 def lancer_tests(fichier_compilable):
     """
-    Lance les tests sur un fichier compile.
+    Lance les tests sur un fichier compilé.
 
     Args:
-        fichier_compilable (str): Le chemin absolu vers le fichier executable a tester.
+        fichier_compilable (str): Le chemin absolu vers le fichier exécutable à tester.
 
     Returns:
-        int: Le nombre de tests reussis.
+        int: Le nombre de tests réussis.
     """
     tests = [
         [0, 0],
@@ -71,15 +69,10 @@ def lancer_tests(fichier_compilable):
     ]
     nb_tests_reussis = 0
     reference_compilable = "reference.out"
-    subprocess.run(["gcc", "reference.c", "-o", reference_compilable, "-Wall", "-ansi"], check=True)
+    subprocess.run(["gcc", "reference.c", "-o", reference_compilable])
     for test in tests:
-        resultat_attendu = subprocess.run(\
-            ["./" + reference_compilable, str(test[0]), str(test[1])],\
-            stdout=subprocess.PIPE, check=True).stdout.decode().strip()
-
-        resultat_test = subprocess.run(\
-            [fichier_compilable, str(test[0]), str(test[1])], \
-            stdout=subprocess.PIPE, check=True).stdout.decode().strip()
+        resultat_attendu = subprocess.run(["./" + reference_compilable, str(test[0]), str(test[1])], stdout=subprocess.PIPE).stdout.decode().strip()
+        resultat_test = subprocess.run([fichier_compilable, str(test[0]), str(test[1])], stdout=subprocess.PIPE).stdout.decode().strip()
         if resultat_test == resultat_attendu:
             nb_tests_reussis += 1
     os.remove(reference_compilable)
@@ -92,31 +85,29 @@ def compter_lignes_documentation(chemin_fichier):
     Compte le nombre de lignes de documentation dans un fichier.
 
     Args:
-        chemin_fichier (str): Le chemin absolu vers le fichier a analyser.
+        chemin_fichier (str): Le chemin absolu vers le fichier à analyser.
 
     Returns:
         int: Le nombre de lignes de documentation.
     """
     # Ouvrir le fichier et compter les lignes de documentation
-    with open(chemin_fichier, 'r') as file:
-        lignes = file.readlines()
-        nb_lignes_doc = sum(1 for ligne in lignes \
-            if ligne.strip().startswith("/*") or ligne.strip().startswith("//"))
+    with open(chemin_fichier, 'r') as f:
+        lignes = f.readlines()
+        nb_lignes_doc = sum(1 for ligne in lignes if ligne.strip().startswith("/*") or ligne.strip().startswith("//"))
         return nb_lignes_doc
 
 
 def nettoyer_executables(chemin_dossier_etudiants):
     """
-    Nettoie tous les fichiers executables (.out) du repertoire des etudiants.
+    Nettoie tous les fichiers exécutables (.out) du répertoire des étudiants.
 
     Args:
-        chemin_dossier_etudiants (str):
-        Le chemin absolu vers le dossier contenant les fichiers des etudiants.
+        chemin_dossier_etudiants (str): Le chemin absolu vers le dossier contenant les fichiers des étudiants.
     """
-    # Recuperer la liste des fichiers des etudiants
+    # Récupérer la liste des fichiers des étudiants
     liste_fichiers_etudiants = os.listdir(chemin_dossier_etudiants)
 
-    # Supprimer tous les fichiers executables (.out)
+    # Supprimer tous les fichiers exécutables (.out)
     for fichier in liste_fichiers_etudiants:
         if fichier.endswith(".out"):
             chemin_fichier = os.path.join(chemin_dossier_etudiants, fichier)
@@ -125,35 +116,32 @@ def nettoyer_executables(chemin_dossier_etudiants):
 
 def generer_fichier_csv(chemin_dossier_etudiants):
     """
-    Genere un fichier CSV contenant les informations relatives a chaque etudiant.
+    Génère un fichier CSV contenant les informations relatives à chaque étudiant.
 
     Args:
-        chemin_dossier_etudiants (str):
-            Le chemin absolu vers le dossier contenant les fichiers des etudiants.
+        chemin_dossier_etudiants (str): Le chemin absolu vers le dossier contenant les fichiers des étudiants.
     """
-    # Creer le fichier CSV
+    # Créer le fichier CSV
     with open('informations_etudiants.csv', 'w', newline='') as csvfile:
-        fieldnames = ['Prenom', 'Nom', 'Compilation', 'Warnings',\
-                      'Tests Reussis', 'Lignes de Documentation']
+        fieldnames = ['Prénom', 'Nom', 'Compilation', 'Warnings', 'Tests Réussis', 'Lignes de Documentation']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        # Recuperer la liste des fichiers des etudiants
+        # Récupérer la liste des fichiers des étudiants
         liste_fichiers_etudiants = os.listdir(chemin_dossier_etudiants)
 
-        # Analyser chaque fichier etudiant
+        # Analyser chaque fichier étudiant
         for fichier in liste_fichiers_etudiants:
             if fichier.endswith(".c"):
                 chemin_fichier = os.path.join(chemin_dossier_etudiants, fichier)
-
-                # Informations sur l'etudiant
+                
+                # Informations sur l'étudiant
                 prenom, nom = extraire_nom_etudiant(fichier)
 
                 # Informations sur la compilation
-                compilation_reussie, fichier_compilable, nb_warnings = \
-                            compiler_fichier_c(chemin_fichier)
-
-                # Nombre de tests reussis
+                compilation_reussie, fichier_compilable, nb_warnings = compiler_fichier_c(chemin_fichier)
+                
+                # Nombre de tests réussis
                 if compilation_reussie:
                     nb_tests_reussis = lancer_tests(fichier_compilable)
                 else:
@@ -162,22 +150,22 @@ def generer_fichier_csv(chemin_dossier_etudiants):
                 # Nombre de lignes de documentation
                 nb_lignes_doc = compter_lignes_documentation(chemin_fichier)
 
-                # ecrire les informations dans le fichier CSV
-                writer.writerow({'Prenom': prenom, 'Nom': nom, \
-                    'Compilation': int(compilation_reussie), 'Warnings': nb_warnings,\
-                    'Tests Reussis': nb_tests_reussis, 'Lignes de Documentation': nb_lignes_doc})
+                # Écrire les informations dans le fichier CSV
+                writer.writerow({'Prénom': prenom, 'Nom': nom, 'Compilation': int(compilation_reussie),
+                                 'Warnings': nb_warnings, 'Tests Réussis': nb_tests_reussis,
+                                 'Lignes de Documentation': nb_lignes_doc})
+
+
 
 
 
 def main():
-    """
-    Main funciton where we start execute.
-    """
     chemin_dossier_etudiants = "eleves_bis"
     generer_fichier_csv(chemin_dossier_etudiants)
-
-    # Nettoyer les fichiers executables
+    
+    # Nettoyer les fichiers exécutables
     nettoyer_executables(chemin_dossier_etudiants)
+
 
 
 
