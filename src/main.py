@@ -1,6 +1,10 @@
 """
 22 mars 2024, Copyright MUNAIT Maks
 Universite Gustave Eiffel
+
+pylint src/main.py
+--------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
 """
 
 import os
