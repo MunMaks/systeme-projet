@@ -107,7 +107,7 @@ def compter_lignes_documentation(chemin_fichier):
     with open(chemin_fichier, 'r') as file:
         lignes = file.readlines()
         nb_lignes_doc = sum(1 for ligne in lignes \
-            if ligne.strip().startswith("/*") or ligne.strip().startswith("//"))
+            if "/*" in ligne or "//" in ligne)
         return nb_lignes_doc
 
 
