@@ -1,5 +1,5 @@
 """
-22 mars 2024, Copyright MUNAIT Maks
+22 mars 2024, Copyright MUNAITPASOV Maksat
 Universite Gustave Eiffel
 
 pylint src/main.py
@@ -43,12 +43,13 @@ def compiler_fichier_c(chemin_fichier):
 
     # Compiler le fichier avec gcc
     resultat_compilation = subprocess.run(\
-        ["gcc", chemin_fichier, "-o", fichier_compilable, "-Wall", "-ansi"],\
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        ["gcc", "-Wall", "-ansi", chemin_fichier, "-o", fichier_compilable],\
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Verifier si la compilation a reussi
     if resultat_compilation.returncode == 0 and os.path.exists(fichier_compilable):
-        return True, fichier_compilable, len(resultat_compilation.stderr.decode().split('\n')) - 1
+        return True, fichier_compilable, \
+            len(resultat_compilation.stderr.decode().split('\n')) - 1
 
     return False, None, len(resultat_compilation.stderr.decode().split('\n')) - 1
 
@@ -75,16 +76,17 @@ def lancer_tests(fichier_compilable):
     ]
     nb_tests_reussis = 0
     reference_compilable = "reference.out"
-    subprocess.run(["gcc", "reference.c", "-o", reference_compilable, "-Wall", "-ansi"], check=True)
+    subprocess.run(["gcc", "-Wall", "-ansi", "reference.c", "-o", reference_compilable])
     for test in tests:
-        resultat_attendu = subprocess.run(\
-            ["./" + reference_compilable, str(test[0]), str(test[1])],\
-            stdout=subprocess.PIPE, check=True).stdout.decode().strip()
+        resultat_attendu = subprocess.run( \
+            ["./" + reference_compilable, str(test[0]), str(test[1])], \
+                stdout=subprocess.PIPE).stdout.decode().strip()
 
-        resultat_test = subprocess.run(\
-            [fichier_compilable, str(test[0]), str(test[1])], \
-            stdout=subprocess.PIPE, check=True).stdout.decode().strip()
-        if resultat_test == resultat_attendu:
+        resultat_test = subprocess.run( \
+            ["./" + fichier_compilable, str(test[0]), str(test[1])], \
+            stdout=subprocess.PIPE).stdout.decode().strip()
+
+        if int(resultat_test.split()[-1]) == int(resultat_attendu):
             nb_tests_reussis += 1
     os.remove(reference_compilable)
     return nb_tests_reussis
