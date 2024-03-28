@@ -116,19 +116,17 @@ def generer_fichier_csv(chemin_dossier_etudiants):
         chemin_dossier_etudiants (str):
             Le chemin absolu vers le dossier contenant les fichiers des etudiants.
     """
-    # Creer le fichier CSV
+    # Creation du fichier CSV
     with open('informations_etudiants.csv', 'w', newline='') as csvfile:
         fieldnames = ['Prenom', 'Nom', 'Compilation', 'Warnings',\
-                      'Tests Reussis', 'Note de Qualite', \
+                        'Tests Reussis', 'Note de Qualite',\
                         'Note de Compilation', 'Note Finale']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
         # Recuperer la liste des fichiers des etudiants
-        liste_fichiers_etudiants = os.listdir(chemin_dossier_etudiants)
 
-        # Analyser chaque fichier etudiant
-        for fichier in liste_fichiers_etudiants:
+        for fichier in os.listdir(chemin_dossier_etudiants):
             if fichier.endswith(".c"):
                 chemin_fichier = os.path.join(chemin_dossier_etudiants, fichier)
 
@@ -136,23 +134,24 @@ def generer_fichier_csv(chemin_dossier_etudiants):
                 prenom, nom = extraire_nom_etudiant(fichier)
 
                 # Informations sur la compilation
-                compilation_reussie, fichier_compilable, nb_warnings = compiler_fichier_c(chemin_fichier)
+                compilation_reussie, fichier_compilable, nb_warnings =\
+                    compiler_fichier_c(chemin_fichier)
 
                 # Nombre de tests reussis
-                if compilation_reussie:
-                    nb_tests_reussis = lancer_tests(fichier_compilable)
-                else:
-                    nb_tests_reussis = 0
+                nb_tests_reussis = lancer_tests(fichier_compilable)\
+                    if compilation_reussie else 0
+
+                note_tests = nb_tests_reussis * (5/7) if not nb_tests_reussis else 0
 
                 # Nombre de lignes de documentation
                 nb_lignes_doc = compter_lignes_documentation(chemin_fichier)
 
                 note_doc = nb_lignes_doc * (2/3) if nb_lignes_doc < 4 else 2
 
-                note_compilation = (compilation_reussie * 3) - (nb_warnings * 0.5)\
-                    if (compilation_reussie * 3) - (nb_warnings * 0.5) > 0 else 0
+                note_compilation = ((compilation_reussie * 3) - (nb_warnings * 0.5))\
+                    if (((compilation_reussie * 3) - (nb_warnings * 0.5)) > 0) else 0
 
-                note_finale = note_compilation + (nb_tests_reussis *(5/7)) + note_doc
+                note_finale = note_compilation + note_tests + note_doc
 
                 # ecrire les informations dans le fichier CSV
                 writer.writerow({'Prenom': prenom, 'Nom': nom, \
@@ -182,7 +181,7 @@ def nettoyer_executables(chemin_dossier_etudiants):
 
 def main():
     """
-    Main funciton where we start execute.
+    Le main de notre programme principale
     """
     chemin_dossier_etudiants = "eleves_bis"
     generer_fichier_csv(chemin_dossier_etudiants)
