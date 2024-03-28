@@ -150,7 +150,7 @@ def generer_fichier_csv(chemin_dossier_etudiants):
                 note_doc = nb_lignes_doc * (2/3) if nb_lignes_doc < 4 else 2
 
                 note_compilation = (compilation_reussie * 3) - (nb_warnings * 0.5)\
-                    if compilation_reussie - (nb_warnings * 0.5) > 0 else 0
+                    if (compilation_reussie * 3) - (nb_warnings * 0.5) > 0 else 0
 
                 note_finale = note_compilation + (nb_tests_reussis *(5/7)) + note_doc
 
