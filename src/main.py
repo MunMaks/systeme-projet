@@ -11,14 +11,15 @@ Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
 import os
 import csv
 import subprocess
-
+import glob
+import logging
 
 class GestionEtudiants:
     """
     Class pour gerer le devoir des etudiants
     """
 
-    def __init__(self, chemin_dossier_etudiants):
+    def __init__(self, chemin_dossier_etudiants: str):
         """
         Initialisation des parametres
 
@@ -49,34 +50,54 @@ class GestionEtudiants:
             # recuperer la liste des fichiers des etudiants
             for fichier in os.listdir(self.chemin_dossier_etudiants):
                 if fichier.endswith(".c"):
-                    chemin_fichier = os.path.join(self.chemin_dossier_etudiants, fichier)
+
+                    # tous les calculs nécessaires pour un fichier d'étudiant
+                    resultats = self.calculs(fichier)
+
+                    # ecrire les informations dans le fichier CSV d'après le dictionnaire
+                    writer.writerow({'Prenom': resultats['prenom'], 'Nom': resultats['nom'],
+                                     'Compilation': int(resultats['compilation_reussie']),
+                                     'Warnings': resultats['nb_warnings'],
+                                     'Tests Reussis': resultats['nb_tests_reussis'],
+                                     'Note de Qualite': resultats['note_doc'],
+                                     'Note de Compilation': resultats['note_compilation'],
+                                     'Note Finale': resultats['note_finale']})
 
 
-                    prenom_nom = self.extraire_nom_etudiant(fichier)
+    def calculs(self, fichier: str) -> dict:
+        """
+        Effectue les calculs pour chaque étudiant.
+
+        Args:
+            fichier (str): Nom du fichier étudiant.
+
+        Returns:
+            dict: Dictionnaire contenant les résultats des calculs.
+        """
+        chemin_fichier = os.path.join(self.chemin_dossier_etudiants, fichier)
+
+        prenom, nom = self.extraire_nom_etudiant(fichier)
+
+        compilation_reussie, fichier_executable, nb_warnings = \
+            self.compiler_fichier_c(chemin_fichier)
+
+        nb_lignes_doc = self.compter_lignes_documentation(chemin_fichier)
+
+        nb_tests_reussis = self.lancer_tests(fichier_executable) if compilation_reussie else 0
 
 
-                    compilation_reussie, fichier_compilable, nb_warnings =\
-                        self.compiler_fichier_c(chemin_fichier)
+        # calcul des notes
+        note_doc = round(nb_lignes_doc * (2 / 3), 2) if nb_lignes_doc < 4 else 2.0
 
-                    nb_lignes_doc = self.compter_lignes_documentation(chemin_fichier)
+        note_compilation = ((compilation_reussie * 3) - (nb_warnings * 0.5)) \
+            if (((compilation_reussie * 3) - (nb_warnings * 0.5)) > 0) else 0
 
+        note_finale = round(note_compilation + note_doc + (nb_tests_reussis * (5 / 7)), 2)
 
-                    nb_tests_reussis = self.lancer_tests(fichier_compilable)\
-                        if compilation_reussie else 0
-
-
-                    note_doc = round(nb_lignes_doc * (2/3), 2) if nb_lignes_doc < 4 else 2.0
-
-                    note_compilation = ((compilation_reussie * 3) - (nb_warnings * 0.5))\
-                        if (((compilation_reussie * 3) - (nb_warnings * 0.5)) > 0) else 0
-
-                    note_finale = round(note_compilation + note_doc + (nb_tests_reussis * (5/7)), 2)
-
-                    # ecrire les informations dans le fichier CSV
-                    writer.writerow({'Prenom': prenom_nom[0], 'Nom': prenom_nom[1], \
-                        'Compilation': int(compilation_reussie), 'Warnings': nb_warnings,\
-                        'Tests Reussis': nb_tests_reussis, 'Note de Qualite': note_doc,
-                        'Note de Compilation' : note_compilation, 'Note Finale': note_finale})
+        return {'prenom': prenom, 'nom' : nom,
+                'compilation_reussie': compilation_reussie, 'nb_warnings': nb_warnings,
+                'nb_tests_reussis': nb_tests_reussis, 'note_doc': note_doc,
+                'note_compilation': note_compilation, 'note_finale': note_finale}
 
 
     def nettoyer_executables(self) -> None:
@@ -85,16 +106,22 @@ class GestionEtudiants:
 
         Args:
             self.chemin_dossier_etudiants (str):
-            Le chemin absolu vers le dossier contenant les fichiers des etudiants.
+                Le chemin absolu vers le dossier contenant les fichiers des etudiants.
         """
-        # Recuperer la liste des fichiers des etudiants
-        liste_fichiers_etudiants = os.listdir(self.chemin_dossier_etudiants)
 
-        # Supprimer tous les fichiers executables (.out)
-        for fichier in liste_fichiers_etudiants:
-            if fichier.endswith(".out"):
-                chemin_fichier = os.path.join(self.chemin_dossier_etudiants, fichier)
-                os.remove(chemin_fichier)
+        chemin_fichiers_executables = os.path.join(self.chemin_dossier_etudiants, "*.out")
+
+        # recuperer la liste des fichiers executables
+        fichiers_executables = glob.glob(chemin_fichiers_executables)
+
+        # supprimer les fichiers executables
+        for fichier in fichiers_executables:
+            try:
+                os.remove(fichier)
+            except OSError as err:  # expliqué dans le README.MD ligne 43
+                logging.error("Erreur lors de la suppression du\
+                               fichier executable : %s", err)
+
 
     @staticmethod
     def extraire_nom_etudiant(nom_fichier: str) -> tuple:
@@ -111,40 +138,48 @@ class GestionEtudiants:
         prenom, nom = nom_fichier_sans_extension.split('_')
         return prenom.capitalize(), nom.capitalize()
 
+
     @staticmethod
-    def compiler_fichier_c(chemin_fichier) -> tuple:
+    def compiler_fichier_c(chemin_fichier: str) -> tuple:
         """
         Compile un fichier C avec gcc et des flags en utilisant subprocess.
 
         Args:
-            chemin_fichier (str): Le chemin absolu vers le fichier C a compiler.
+            chemin_fichier (str):
+                Le chemin absolu vers le fichier C a compiler.
 
         Returns:
-            bool: True si la compilation reussie, False sinon.
+            tuple: Un tuple contenant trois elements :
+                - Un booleen indiquant si la compilation a reussi.
+                - Le chemin absolu vers le fichier compile (si la compilation a reussi).
+                - Le nombre de warnings emis par le compilateur lors de la compilation.
+
         """
         nom_fichier_sans_extension = os.path.splitext(chemin_fichier)[0]
-        fichier_compilable = nom_fichier_sans_extension + ".out"
+        fichier_executable = nom_fichier_sans_extension + ".out"
 
         # compiler le fichier avec gcc
         resultat_compilation = subprocess.run( \
-            ["gcc", "-Wall", "-ansi", chemin_fichier, "-o", fichier_compilable], \
+            ["gcc", "-Wall", "-ansi", chemin_fichier, "-o", fichier_executable], \
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
 
         # la compilation a reussi
-        if resultat_compilation.returncode == 0 and os.path.exists(fichier_compilable):
-            return True, fichier_compilable, \
+        if resultat_compilation.returncode == 0 and os.path.exists(fichier_executable):
+            return True, fichier_executable, \
                 len(resultat_compilation.stderr.decode().split('\n')) - 1
 
         # la compilation a rate
         return False, None, len(resultat_compilation.stderr.decode().split('\n')) - 1
 
+
     @staticmethod
-    def compter_lignes_documentation(chemin_fichier) -> int:
+    def compter_lignes_documentation(chemin_fichier: str) -> int:
         """
         Compte le nombre de lignes de documentation dans un fichier.
 
         Args:
-            chemin_fichier (str): Le chemin absolu vers le fichier a analyser.
+            chemin_fichier (str):
+                Le chemin absolu vers le fichier a analyser.
 
         Returns:
             int: Le nombre de lignes de documentation.
@@ -155,13 +190,15 @@ class GestionEtudiants:
             nb_lignes_doc = sum(1 for ligne in lignes if "/*" in ligne or "//" in ligne)
             return nb_lignes_doc
 
+
     @staticmethod
-    def lancer_tests(fichier_compilable: str) -> int:
+    def lancer_tests(fichier_executable: str) -> int:
         """
         Lance les tests sur un fichier compile.
 
         Args:
-            fichier_compilable (str): Le chemin absolu vers le fichier executable a tester.
+            fichier_executable (str):
+                Le chemin absolu vers le fichier executable a tester.
 
         Returns:
             int: Le nombre de tests reussis.
@@ -174,7 +211,7 @@ class GestionEtudiants:
             resultat_attendu = test[0] + test[1]
 
             resultat_test = subprocess.run( \
-                ["./" + fichier_compilable, str(test[0]), str(test[1])], \
+                ["./" + fichier_executable, str(test[0]), str(test[1])], \
                 stdout=subprocess.PIPE, check=False).stdout.decode().strip()
 
             if int(resultat_test.split()[-1]) == resultat_attendu:
