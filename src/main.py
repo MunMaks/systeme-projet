@@ -141,17 +141,15 @@ def generer_fichier_csv(chemin_dossier_etudiants):
                 nb_tests_reussis = lancer_tests(fichier_compilable)\
                     if compilation_reussie else 0
 
-                note_tests = nb_tests_reussis * (5/7) if not nb_tests_reussis else 0
-
                 # Nombre de lignes de documentation
                 nb_lignes_doc = compter_lignes_documentation(chemin_fichier)
 
-                note_doc = nb_lignes_doc * (2/3) if nb_lignes_doc < 4 else 2
+                note_doc = round(nb_lignes_doc * (2/3), 2) if nb_lignes_doc < 4 else 2.0
 
                 note_compilation = ((compilation_reussie * 3) - (nb_warnings * 0.5))\
                     if (((compilation_reussie * 3) - (nb_warnings * 0.5)) > 0) else 0
 
-                note_finale = note_compilation + note_tests + note_doc
+                note_finale = round(note_compilation + note_doc + (nb_tests_reussis * (5/7)), 2)
 
                 # ecrire les informations dans le fichier CSV
                 writer.writerow({'Prenom': prenom, 'Nom': nom, \
