@@ -71,7 +71,7 @@ On commence par la création de `informations_etudiants.csv` en mode écriture, 
 Et pour chaque étudiant on fait les calculs, d'après la fonction précédente `calculs()` et ensuite on va insérer des étudiants l'un après l'autre avec leurs résultats.
 <br>
 
-Après d'après les bonnes habitudes on doit aussi créer la fonction `main()` qui va exécuter notre code et pour finir la constructino vitale c'est:
+Après d'après les bonnes habitudes on doit aussi créer la fonction `main()` qui va exécuter notre code et pour finir la construction vitale c'est:
 ```
 if __name__ == '__main__':
     main()
