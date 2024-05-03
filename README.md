@@ -81,4 +81,4 @@ if __name__ == '__main__':
 C'était un bon projet pour comprendre comment travailler avec os, subprocess, fichiers .csv et surtout la compréhension profonde de Python3.
 
 ## Author
-- MUNAITPASOV Maksat
+- MUNAITPASOV M.
